@@ -1,0 +1,8 @@
+[
+	{
+		"id": "PCbfAOO",
+		"label": "Analytics Opt Out:",
+		"type": "bool",
+		"default": "false",
+	}
+]
