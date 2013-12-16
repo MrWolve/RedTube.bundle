@@ -4,6 +4,7 @@ def PCbfLogging(PCbfLoggingT='pageview',PCbfLoggingDH='plexchannels.com',PCbfLog
 		#https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
 		#PCbfLoggingURLEndPoint	=	'http://www.google-analytics.com/collect?'
 		PCbfLoggingURLEndPoint	=	'https://ssl.google-analytics.com/collect?'
+		PCbfLoggingCID =	str(String.UUID())	#cid
 		if Data.Exists('PCbfLoggingData'):
 			try:
 				Daten = Data.LoadObject('PCbfLoggingData')
@@ -14,10 +15,11 @@ def PCbfLogging(PCbfLoggingT='pageview',PCbfLoggingDH='plexchannels.com',PCbfLog
 				Inhalt = Daten.values()
 				PCbfLoggingCID = str(Inhalt[0])
 		else:
-			PCbfLoggingCID =	str(String.UUID())	#cid
-			PCbfLoggingCIDA = {}
-			PCbfLoggingCIDA[0] = PCbfLoggingCID
-			Data.SaveObject('PCbfLoggingData', PCbfLoggingCIDA)
+			try:
+				PCbfLoggingCIDA = {}
+				PCbfLoggingCIDA[0] = PCbfLoggingCID
+				Data.SaveObject('PCbfLoggingData', PCbfLoggingCIDA)
+			except: pass
 		PCbfLoggingV				=	1	#v
 		PCbfLoggingAIP			=	1	#aip
 		PCbfLoggingUL				= ''	#Locale.CurrentLocale oder Locale.Geolocation - scheint beides nicht zu funktionieren!	#ul
@@ -44,25 +46,8 @@ def PCbfLogging(PCbfLoggingT='pageview',PCbfLoggingDH='plexchannels.com',PCbfLog
 		except:
 			Log(HTTP.Request(url, headers=PCbfLoggingHeaders, cacheTime=10, timeout=5, immediate=True).content)
 	else:
-		if Data.Exists('PCbfLoggingData'):
-			Data.Remove('PCbfLoggingData')
+		try:
+			if Data.Exists('PCbfLoggingData'):
+				Data.Remove('PCbfLoggingData')
+		except: pass
 		Log('Anonymous Usage Statistics DEACTIVATED!')
-
-@route(PREFIX+'/dosetheaders')
-def doSetHeaders():
-	doSetHeadersV = 1
-	HTTP.Headers['Referer'] = 'http://plexchannels.com//channels/'+TITLE.lower()
-	HTTP.Headers['User-Agent']	=	'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
-#'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:25.0) Gecko/20100101 Firefox/25.0'
-#'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:25.0) Gecko/20100101 Firefox/25.0'
-#'Mozilla/5.0 (Windows NT 6.0; WOW64; rv:24.0) Gecko/20100101 Firefox/24.0'
-#'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:24.0) Gecko/20100101 Firefox/24.0'
-#'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36'
-#'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1664.3 Safari/537.36'
-#'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.16 Safari/537.36'
-#'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1623.0 Safari/537.36'
-#'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.17 Safari/537.36'
-#'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)'
-#'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)'
-#'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/5.0)'
-	return doSetHeadersV

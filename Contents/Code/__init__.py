@@ -44,16 +44,17 @@ RT_API_TAGS						=	RT_API_BASE+'Tags.getTagList&output=json'
 RT_API_PORNSTARS			=	RT_API_BASE+'Stars.getStarDetailedList&output=json'
 RT_API_LIMIT					=	int(26)
 
-RT_HTML_VIDEO_xpath			=	'//div[@class="video"]/a/@href'
-RT_HTML_NEXTa_xpath			=	'//a[@id="navNext"]'
-RT_HTML_NEXTb_xpath			=	'//link[@rel="next"]'
-RT_HTML_RATE						=	RT_HTML_BASE+'/rate?object_type=1&object_id=%s&rate=%s&ufAC=%s'
-REGEXufAC								=	Regex("'ufAC', '(?P<ufAC>\w+)'")
+RT_HTML_VIDEO_xpath		=	'//div[@class="video"]/a/@href'
+RT_HTML_NEXTa_xpath		=	'//a[@id="navNext"]'
+RT_HTML_NEXTb_xpath		=	'//link[@rel="next"]'
+#RT_HTML_RATE					=	RT_HTML_BASE+'/rate?object_type=1&object_id=%s&rate=%s&ufAC=%s'
+#REGEXufAC						=	Regex("'ufAC', '(?P<ufAC>\w+)'")
 
 
 ####################################################################################################
 from PCbfNews import *
 from PCbfPreCache import *
+from PCbfSetHeaders import *
 
 
 ####################################################################################################
@@ -68,7 +69,9 @@ def Start():
 		SetHeadersDone = doSetHeaders()
 		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','SetHeaders','doSetHeaders done.',SetHeadersDone)
 		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','SetHeaders','doSetHeaders failed!',SetHeadersDone)
-	except: pass
+	except:
+		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','SetHeaders','doSetHeaders completly failed!',0)
+		except: pass
 
 
 ###################################################################################################
@@ -93,7 +96,7 @@ def MainMenu():
 		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','PreCache','doPreCache done.',PreCacheDone)
 		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','PreCache','doPreCache failed!',PreCacheDone)
 	except:
-		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','PreCache','doPreCache completly failed.',0)
+		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','PreCache','doPreCache completly failed!',0)
 		except: pass
 	return oc
 
