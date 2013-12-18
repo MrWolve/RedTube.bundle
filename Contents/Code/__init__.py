@@ -1,265 +1,274 @@
-import urllib, re, time, random
+TITLE		=	'RedTube'
+PREFIX	=	'/video/redtube'
+PCVer		=	str('1.0.20131224')
 
-NAME = 'RedTube'
-randomArt = random.randint(1,4)
-ART = 'artwork-'+str(randomArt)+'.jpg'
-ICON = 'icon-default.png'
+#https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
+PCbfLoggingDH		=	String.Quote('redtube.com')
+PCbfLoggingTID	=	'UA-40179636-2'	#tid
 
-REDTUBE_BASE						= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com'
-REDTUBE_NEWEST					= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/?page=%s'
-REDTUBE_RATED						= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/top?period=%s___page=%s'
-REDTUBE_VIEWED					= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/mostviewed?period=%s___page=%s'
-REDTUBE_FAVORED					= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/mostfavored?period=%s___page=%s'
-REDTUBE_CHANNELS_LIST		= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/channels'
-REDTUBE_CHANNELS				= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com%s?sorting=%s___page=%s'
-REDTUBE_PORNSTARS_LIST	= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/pornstar/%s/%s'
-REDTUBE_PORNSTAR				= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/pornstar/%s?page=%s'
-REDTUBE_SEARCH					= 'http://plexchannels.flowsworld.com/redirect.php?page=redtube&url=http://www.redtube.com/%s?search=%s___page=%s'
+from PCbfCommon import *
+import random
+
+ART					=	'artwork-'+str(random.randint(1,4))+'.jpg'
+ICON				=	'icon-default.png'
+SEARCH_ICON =	'icon-search.png'
+
+
+###################################################################################################
+RT_HTML_BASE				=	'http://www.redtube.com'
+RT_HTML_NewestSP		=	'/?page=%s'
+RT_HTML_TopRated		=	'/top?period=%s&page=%s'
+RT_HTML_MostViewed	=	'/mostviewed?period=%s&page=%s'
+RT_HTML_MostFavored	=	'/mostfavored?period=%s&page=%s'
+RT_HTML_CHANNELS		=	RT_HTML_BASE+'/channels'
+RT_HTML_TAGS				=	RT_HTML_BASE+'/tag'
+#RT_HTML_PORNSTARS	=	RT_HTML_BASE+'/pornstar/%s/%s'
+RT_HTML_CHANNEL			=	'/redtube/%s?sorting=%s&page=%s'
+RT_HTML_TAG					=	'/tag/%s/%s?page=%s'
+RT_HTML_PORNSTAR		=	'/pornstar/%s/%s?page=%s'
+RT_HTML_PCbf				=	'/plexchannels'
+
+RT_API_BASE						= 'http://api.redtube.com/?data=redtube.'
+RT_API_searchVideos		=	'Videos.searchVideos&output=json&thumbsize=big&%s'
+RT_API_getVideoById		=	'Videos.getVideoById&output=json&thumbsize=big&video_id=%s'
+RT_API_isVideoActive	=	'Videos.isVideoActive&output=json&video_id=%s'
+RT_API_Newest					=	'ordering=newest&page=%s'
+RT_API_TopRated				=	'ordering=rating&period=%s&page=%s'
+RT_API_MostViewed			=	'ordering=mostviewed&period=%s&page=%s'
+RT_API_CHANNEL				=	'category=%s&ordering=%s&page=%s'
+RT_API_TAG						=	'tags[]=%s&ordering=%s&page=%s'
+RT_API_PORNSTAR				=	'stars[]=%s&ordering=%s&page=%s'
+RT_API_SEARCH					=	'search=%s&ordering=%s&page=%s'
+RT_API_CHANNELS				=	RT_API_BASE+'Categories.getCategoriesList&output=json'
+RT_API_TAGS						=	RT_API_BASE+'Tags.getTagList&output=json'
+RT_API_PORNSTARS			=	RT_API_BASE+'Stars.getStarDetailedList&output=json'
+RT_API_LIMIT					=	int(26)
+
+RT_HTML_VIDEO_xpath		=	'//div[@class="video"]/a/@href'
+RT_HTML_NEXTa_xpath		=	'//a[@id="navNext"]'
+RT_HTML_NEXTb_xpath		=	'//link[@rel="next"]'
+#RT_HTML_RATE					=	RT_HTML_BASE+'/rate?object_type=1&object_id=%s&rate=%s&ufAC=%s'
+#REGEXufAC						=	Regex("'ufAC', '(?P<ufAC>\w+)'")
+
 
 ####################################################################################################
+from PCbfNews import *
+from PCbfPreCache import *
+from PCbfSetHeaders import *
 
+
+####################################################################################################
 def Start():
-	# Initialize the plugin
-	Plugin.AddPrefixHandler('/video/redtube', MainMenu, NAME, ICON, ART)
-	Plugin.AddViewGroup("List", viewMode = "List", mediaType = "items")
-
-	# Setup the artwork associated with the plugin
-	MediaContainer.art = R(ART)
-	MediaContainer.title1 = NAME
-	MediaContainer.viewGroup = "List"
-	DirectoryItem.thumb = R(ICON)
-	VideoItem.thumb = R(ICON)
-
-	HTTP.CacheTime = 60
-	HTTP.Headers['Referer'] = 'http://plexchannels.flowsworld.com'
-	HTTP.RandomizeUserAgent(browser=None)
-
-####################################################################################################
-
-def Thumb(url):
+	ObjectContainer.title1 = TITLE
+	ObjectContainer.art = R(ART)
+	DirectoryObject.thumb = R(ICON)
+	DirectoryObject.art = R(ART)
+	VideoClipObject.thumb = R(ICON)
+	VideoClipObject.art = R(ART)
 	try:
-		data = HTTP.Request(url).content
-		return DataObject(data, 'image/jpeg')
+		SetHeadersDone = doSetHeaders()
+		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','SetHeaders','doSetHeaders done.',SetHeadersDone)
+		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','SetHeaders','doSetHeaders failed!',SetHeadersDone)
 	except:
-		return Redirect(R(ICON))
+		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','SetHeaders','doSetHeaders completly failed!',0)
+		except: pass
 
-def GetDurationFromString(duration):
-	try:
-		durationArray = duration.split(":")
-		if len(durationArray) == 3:
-			hours = int(durationArray[0])
-			minutes = int(durationArray[1])
-			seconds = int(durationArray[2])
-		elif len(durationArray) == 2:
-			hours = 0
-			minutes = int(durationArray[0])
-			seconds = int(durationArray[1])
-		elif len(durationArray)	==	1:
-			hours = 0
-			minutes = 0
-			seconds = int(durationArray[0])
-		return int(((hours)*3600 + (minutes*60) + seconds)*1000)
-	except:
-		return 0
 
-def msToRuntime(ms):
-	if ms is None or ms <= 0:
-		return None
-	ret = []
-	sec = int(ms/1000) % 60
-	min = int(ms/1000/60) % 60
-	hr  = int(ms/1000/60/60)
-	return "%02d:%02d:%02d" % (hr,min,sec)
-
-####################################################################################################
-
+###################################################################################################
+@handler(PREFIX, TITLE, art=ART, thumb=ICON)
 def MainMenu():
-	dir = MediaContainer(viewMode = "List")
-	dir.Append(Function(DirectoryItem(MovieList, L('Newest')), url=REDTUBE_NEWEST, mainTitle='Newest'))
-	dir.Append(Function(PopupDirectoryItem(SortOrderSubMenu, L('Top Rated')), url=REDTUBE_RATED, mainTitle='Top Rated'))
-	dir.Append(Function(PopupDirectoryItem(SortOrderSubMenu, L('Most Viewed')), url=REDTUBE_VIEWED, mainTitle='Most Viewed'))
-	dir.Append(Function(PopupDirectoryItem(SortOrderSubMenu, L('Most Favored')), url=REDTUBE_FAVORED, mainTitle='Most Favored'))
-	dir.Append(Function(DirectoryItem(CategoriesMenu, L('Categories'))))
-	dir.Append(Function(PopupDirectoryItem(SortOrderSubMenu, L('Porn Stars')), url=REDTUBE_PORNSTARS_LIST, mainTitle='Porn Stars', pageFormat='pornstars'))
-	dir.Append(Function(InputDirectoryItem(Search, L('Search'), L('Search'), thumb=R(ICON)), url=REDTUBE_SEARCH))
-	dir.Append(Function(DirectoryItem(FavoriteVideos, L('Favorites'))))
-	#dir.Append(Function(VideoItem(PlayVideo,L('Test Video')), url='http://www.redtube.com/55533'))
-	return dir
+	oc = ObjectContainer()
+	oc.add(DirectoryObject(key=Callback(MovieList, mainTitle='Newest (Staff Picks)', url=RT_HTML_NewestSP, pageFormat='NewestSP'), title='Newest (Staff Picks)', summary='The newest RedTube Staff Picks.', thumb=R(ICON)))
+	oc.add(DirectoryObject(key=Callback(SortOrderSubMenu, mainTitle='Top Rated', url=RT_HTML_TopRated, pageFormat='TopRated'), title='Top Rated', summary='Watch the Top Rated videos on RedTube.', thumb=R(ICON)))
+	oc.add(DirectoryObject(key=Callback(SortOrderSubMenu, mainTitle='Most Viewed', url=RT_HTML_MostViewed, pageFormat='MostViewed'), title='Most Viewed', summary='Watch the Most Viewed videos on RedTube.', thumb=R(ICON)))
+	oc.add(DirectoryObject(key=Callback(SortOrderSubMenu, mainTitle='Most Favored', url=RT_HTML_MostFavored, pageFormat='MostFavored'), title='Most Favored', summary='Watch the Most Favored videos on RedTube.', thumb=R(ICON)))
+	oc.add(DirectoryObject(key=Callback(CategoriesMenu), title='Categories', summary='Browse videos by Categories.', thumb=R(ICON)))
+	oc.add(DirectoryObject(key=Callback(TagsMenu), title='Tags', summary='Browse videos by Tags.', thumb=R(ICON)))
+	oc.add(DirectoryObject(key=Callback(PornstarsMenu), title='Porn Stars', summary='Browse videos of your favorite Porn Star.', thumb=R(ICON)))
+	oc.add(DirectoryObject(key=Callback(MovieList, mainTitle='Favorites', url=RT_HTML_PCbf, pageFormat='Favorites'), title='Favorites', summary='Your favorite RedTube videos.', thumb=R(ICON)))
+	oc.add(InputDirectoryObject(key=Callback(Search), title="Search", summary="Search RedTube for videos", prompt="Search for", thumb=R(SEARCH_ICON)))
+	oc.add(PrefsObject(title='Preferences',summary='Change RedTube Channel Settings.'))
+	PCbfNews(oc=oc, limit=1)
+	try: PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
+	except: pass
+	try:
+		PreCacheDone = doPreCache()
+		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','PreCache','doPreCache done.',PreCacheDone)
+		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','PreCache','doPreCache failed!',PreCacheDone)
+	except:
+		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','PreCache','doPreCache completly failed!',0)
+		except: pass
+	return oc
 
-def CategoriesMenu(sender):
-	dir = MediaContainer(title2 = sender.itemTitle)
-	pageContent = HTML.ElementFromURL(REDTUBE_CHANNELS_LIST)
-	for categoryItem in pageContent.xpath('//ul[@class="videoThumbs"]/li'):
-		categoryItemTitle = categoryItem.xpath('div/a')[0].get('title')
-		categoryItemQuery = categoryItem.xpath('div/a')[0].get('href')
-		categoryItemThumb = categoryItem.xpath('div/a/img')[0].get('src')
-		categoryItemNrVids = categoryItem.xpath('p/text()')[0].replace('Videos', '').strip()
-		categoryItemTitle = categoryItemTitle+' ('+categoryItemNrVids+' Videos)'
-		#Log(categoryItemTitle+'__'+categoryItemNrVids+'__'+categoryItemQuery+'__'+categoryItemThumb)
-		pageFormat = 'channels'
-		dir.Append(Function(PopupDirectoryItem(SortOrderSubMenu, L(categoryItemTitle), thumb=Function(Thumb, url=categoryItemThumb)), url=REDTUBE_CHANNELS, mainTitle=categoryItemTitle, searchQuery=categoryItemQuery, pageFormat=pageFormat))
-	return dir
 
-def PornstarsMenu(sender,sortOrder=''):
-	dir = MediaContainer(title2 = sender.itemTitle+' Porn Stars')
-	availAlphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-	dir.Append(Function(DirectoryItem(PornstarsList, L('All')), mainTitle=sender.itemTitle+' Porn Stars', searchQuery='', sortOrder=sortOrder))
-	for alphabetItem in availAlphabet:
-		dir.Append(Function(DirectoryItem(PornstarsList, L(alphabetItem.capitalize())), mainTitle=sender.itemTitle+' Porn Stars', searchQuery=alphabetItem, sortOrder=sortOrder))
-	return dir
-
-def PornstarsList(sender,mainTitle,searchQuery='',sortOrder=''):
-	dir = MediaContainer(title2 = mainTitle+' ('+sender.itemTitle+')')
-	if searchQuery != '':
-		pageContent = HTML.ElementFromURL(REDTUBE_PORNSTARS_LIST % (searchQuery, sortOrder))
+####################################################################################################
+@route(PREFIX+'/sortordersubmenu')
+def SortOrderSubMenu(url, mainTitle, searchQuery=None, pageFormat=None):
+	oc = ObjectContainer(title2=mainTitle, no_cache=True)
+	if ((pageFormat == 'TopRated') or (pageFormat == 'MostViewed') or (pageFormat == 'MostFavored')):
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='weekly'), title='Weekly'))
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='monthly'), title='Monthly'))
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='alltime'), title='All Time'))
+	elif (pageFormat == 'Search'):
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='newest'), title='Newest'))
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='rating'), title='Top Rated'))
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='mostviewed'), title='Most Viewed'))
 	else:
-		if sortOrder != '':
-			pageContent = HTML.ElementFromURL(REDTUBE_PORNSTARS_LIST % (sortOrder, searchQuery))
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='newest'), title='Newest'))
+		if (pageFormat == 'Channel'):
+			oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='rating'), title='Top Rated'))
 		else:
-			pageContent = HTML.ElementFromURL(REDTUBE_PORNSTARS_LIST % (searchQuery, sortOrder))
-	for pornstarItem in pageContent.xpath('//ul[@class="pornStarsThumbs"]/li[not(@class="clear")]'):
-		pornstarItemTitle = pornstarItem.xpath('div/a')[0].get('title')
-		pornstarItemQuery = pornstarItem.xpath('div/a')[0].get('href').replace('/pornstar/', '').strip()
-		pornstarItemThumb = pornstarItem.xpath('div/a/img')[0].get('src')
-		pornstarItemNrVids = pornstarItem.xpath('div[@class="videosCount"]/text()')[0].replace('Videos', '').strip()
-		pornstarItemTitle = pornstarItemTitle+' ('+pornstarItemNrVids+' Videos)'
-		#Log(pornstarItemTitle+'__'+pornstarItemQuery+'__'+pornstarItemThumb+'__'+pornstarItemNrVids)
-		pageFormat = 'pornstars'
-		dir.Append(Function(DirectoryItem(MovieList, L(pornstarItemTitle), thumb=Function(Thumb, url=pornstarItemThumb)), url=REDTUBE_PORNSTAR, mainTitle=pornstarItemTitle, searchQuery=pornstarItemQuery, pageFormat=pageFormat, sortOrder=''))
-	return dir
+			oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='toprated'), title='Top Rated'))
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='mostviewed'), title='Most Viewed'))
+		oc.add(DirectoryObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='mostfavored'), title='Most Favored'))
+	return oc
 
-def SortOrderSubMenu(sender,url,mainTitle,searchQuery='',pageFormat='normal'):
-	dir = MediaContainer()
-	if pageFormat == 'channels':
-		dir.Append(Function(DirectoryItem(MovieList, L('Newest')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder=''))
-		dir.Append(Function(DirectoryItem(MovieList, L('Top Rated')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='rating'))
-		dir.Append(Function(DirectoryItem(MovieList, L('Most Viewed')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='mostviewed'))
-		dir.Append(Function(DirectoryItem(MovieList, L('Most Favored')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='mostfavored'))
-	elif pageFormat == 'search':
-		dir.Append(Function(DirectoryItem(MovieList, L('Most Relevant')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder=''))
-		dir.Append(Function(DirectoryItem(MovieList, L('Newest')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='new'))
-		dir.Append(Function(DirectoryItem(MovieList, L('Top Rated')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='top'))
-		dir.Append(Function(DirectoryItem(MovieList, L('Most Viewed')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='mostviewed'))
-		dir.Append(Function(DirectoryItem(MovieList, L('Most Favored')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='mostfavored'))
-	elif pageFormat == 'pornstars':
-		dir.Append(Function(DirectoryItem(PornstarsMenu, L('Female')), sortOrder=''))
-		dir.Append(Function(DirectoryItem(PornstarsMenu, L('All')), sortOrder='all'))
-		dir.Append(Function(DirectoryItem(PornstarsMenu, L('Male')), sortOrder='male'))
+from PCbfFavorites import *
+from PCbfgetVideoById import *
+
+@route(PREFIX+'/movielist', page=int)
+def MovieList(url, mainTitle=None, searchQuery=None, pageFormat=None, sortOrder=None, page=1):
+	ocML = ObjectContainer(title2=mainTitle+' | Page: '+str(page), no_cache=True)
+	PCbfLoggingDT = TITLE
+	if (pageFormat!=None): PCbfLoggingDT += ' - '+pageFormat
+	if (mainTitle!=None): PCbfLoggingDT += ' - '+mainTitle
+	if (sortOrder!=None): PCbfLoggingDT += ' - '+sortOrder.capitalize()
+	PCbfLoggingDT += ' .'+str(page)
+	pageContent = None
+	apiContent = None
+	if (pageFormat != 'Search'):
+		if (pageFormat == 'Favorites'):
+			PCbfLoggingDP = url
+			try:
+				pageContent = ListFavorites()
+				if (pageContent==None):
+					return ObjectContainer(header='You have no Favorites!', message='You need to add at least one video to your Favorites!', no_cache=True)
+			except:
+				PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (fake HTML)','Error','List Videos','ListFavorites() failed!',page)
+		elif (pageFormat == 'NewestSP'):
+			PCbfLoggingDP = (url % (str(page)))
+			try: pageContent = HTML.ElementFromURL(RT_HTML_BASE+url % (str(page)))
+			except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (HTML)','Error','List Videos','Page Not Found!',page)
+		elif ((pageFormat == 'TopRated') or (pageFormat == 'MostViewed') or (pageFormat == 'MostFavored')):
+			PCbfLoggingDP = (url % (sortOrder, str(page)))
+			try: pageContent = HTML.ElementFromURL(RT_HTML_BASE+url % (sortOrder, str(page)))
+			except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (HTML)','Error','List Videos','Page Not Found!',page)
+		else:
+			if (sortOrder=='newest'): sortOrderURL=''
+			else: sortOrderURL=sortOrder
+			PCbfLoggingDP = (url % (searchQuery, sortOrderURL, str(page)))
+			try: pageContent = HTML.ElementFromURL(RT_HTML_BASE+url % (searchQuery, sortOrderURL, str(page)))
+			except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (HTML)','Error','List Videos','Page Not Found!',page)
+		if (pageContent!=None):
+			if (len(pageContent.xpath(RT_HTML_VIDEO_xpath))>0):
+				for videoID in pageContent.xpath(RT_HTML_VIDEO_xpath):
+					try: getVideoById(videoID=videoID.strip('/'), ocML=ocML)
+					except: PCbfLogging('event',PCbfLoggingDH,str(videoID),PCbfLoggingDT+' (API)','Error','List Videos','getVideoById failed!',int(videoID.strip('/')))
+				if (len(ocML)>0):
+					PCbfLogging('pageview',PCbfLoggingDP,PCbfLoggingDP,PCbfLoggingDT+' (HTML)')
+					if ((len(pageContent.xpath(RT_HTML_NEXTa_xpath))>0) or (len(pageContent.xpath(RT_HTML_NEXTb_xpath))>0)):
+						ocML.add(NextPageObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder=sortOrder, page=(int(page)+1)), title='More...'))
+					else:
+						PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (HTML)','Notice','List Videos','No NEXT. HTML changed?',page)
+				else:
+					PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (HTML)','Notice','List Videos','No Videos to list. Trying API instead of HTML.',page)
+			else:
+				PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (HTML)','Error','List Videos','XPath RT_HTML_VIDEO_xpath failed! HTML changed?',page)
+	if ((pageFormat == 'Search') or (len(ocML)<1)):
+		if (pageFormat == 'NewestSP'):
+			PCbfLoggingDP = (url % (str(page)))
+			try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_Newest % str(page))))
+			except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','API Not Found!',page)
+		elif ((pageFormat == 'TopRated') or (pageFormat == 'MostViewed') or (pageFormat == 'MostFavored')):
+			PCbfLoggingDP = (url % (sortOrder, str(page)))
+			if (pageFormat == 'TopRated'):
+				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_TopRated % (sortOrder, str(page)))))
+				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
+			else:
+				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_MostViewed % (sortOrder, str(page)))))
+				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
+		elif ((pageFormat == 'Channel') or (pageFormat == 'Tag') or (pageFormat == 'PornStar') or (pageFormat == 'Search')):
+			if (sortOrder=='newest'): sortOrderURL=''
+			elif (sortOrder=='toprated'):
+				sortOrderURL=sortOrder
+				sortOrder='rating'
+			elif (sortOrder=='mostfavored'):
+				sortOrderURL=sortOrder
+				sortOrder='mostviewed'
+			else: sortOrderURL=sortOrder
+			PCbfLoggingDP = (url % (searchQuery, sortOrderURL, str(page)))
+			if (pageFormat == 'Channel'):
+				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_CHANNEL % (searchQuery, sortOrder, str(page)))))
+				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
+			elif (pageFormat == 'Tag'):
+				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_TAG % (searchQuery, sortOrder, str(page)))))
+				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
+			elif (pageFormat == 'PornStar'):
+				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_PORNSTAR % (searchQuery, sortOrder, str(page)))))
+				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
+			else:
+				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_SEARCH % (String.Quote(searchQuery, usePlus=True), sortOrder, str(page)))))
+				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
+		if (apiContent!=None):
+			if 'videos' in apiContent:
+				for data in apiContent['videos']:
+					if not 'video' in data: data = None
+					else: data = data['video']
+					try: videoID = data['video_id']
+					except: videoID = None
+					videoTAGS = []
+					if 'tags' in data:
+						for key in data['tags']:
+							videoTAGS.append(key['tag_name'])
+					try: videoDURATION = Datetime.MillisecondsFromString(data['duration'])
+					except: videoDURATION = None
+					try:
+						videoTITLE = data['title']
+						oc = ObjectContainer(title2=videoTITLE)
+					except: videoTITLE = None
+					try: videoSUMMARY = 'Duration: '+data['duration']+' | Tags: '+', '.join(videoTAGS)
+					except: videoSUMMARY = None
+					try:
+						videoTHUMB = data['default_thumb'].replace('m.jpg', 'b.jpg')
+						HTTP.PreCache(videoTHUMB, cacheTime=CACHE_1WEEK)
+					except: videoTHUMB = None
+					if ((data == None) or (videoID == None) or (len(videoTAGS)<1) or (videoDURATION == None) or (videoTITLE == None) or (videoSUMMARY == None) or (videoTHUMB == None)):
+						PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Problem with Content! API changed?',page)
+					ocML.add(DirectoryObject(
+						key = Callback(getVideoById, videoID=videoID),
+						title = videoTITLE,
+						tagline = videoSUMMARY,
+						summary = videoSUMMARY,
+						thumb = Resource.ContentsOfURLWithFallback(videoTHUMB, fallback=R(ICON)),
+						art = Resource.ContentsOfURLWithFallback(videoTHUMB, fallback=R(ART)),
+						duration = videoDURATION)
+					)
+				if 'count' in apiContent: videoCOUNT = int(apiContent['count'])
+				else: videoCOUNT = 0
+				if (len(ocML)>0):
+					PCbfLogging('pageview',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)')
+					if (page<((int(videoCOUNT)/RT_API_LIMIT)+1)):
+						ocML.add(NextPageObject(key=Callback(MovieList, url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder=sortOrder, page=(int(page)+1)), title='More...'))
+					if (pageFormat == 'Search'):
+						PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Search','Query',searchQuery,videoCOUNT)
+			else:
+				if (pageFormat == 'Search'):
+					PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Notice','List Videos','No Videos found using Search.',0)
+					return ObjectContainer(header='Search for: '+searchQuery, message="No Videos found!", no_cache=True)
+				else:
+					PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','No Content! API changed?',page)
+					return ObjectContainer(header='Sorry, an Error occurred!', message='Not sure why, but there occured an error retrieving data for your query.', no_cache=True)
+		else:
+			PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Problem with Content! API changed?',page)
+			return ObjectContainer(header='Sorry, an Error occurred!', message='Not sure why, but there occured an error retrieving data for your query.', no_cache=True)
+	if (len(ocML)>0): return ocML
 	else:
-		dir.Append(Function(DirectoryItem(MovieList, L('Weekly')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder=''))
-		dir.Append(Function(DirectoryItem(MovieList, L('Monthly')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='monthly'))
-		dir.Append(Function(DirectoryItem(MovieList, L('All Time')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder='alltime'))
-	return dir
+		PCbfLogging('event',PCbfLoggingDH,str(PCbfLoggingDP),str(PCbfLoggingDT),'Error','List Videos','FATAL ERROR!',page)
+		return ObjectContainer(header='Sorry, an Error occurred!', message='Not sure what, but something went terribly wrong...', no_cache=True)
 
-def MovieList(sender,url,mainTitle='',searchQuery='',pageFormat='normal',sortOrder='',page=1):
-	#Log(searchQuery+'__'+pageFormat+'__'+sortOrder+'__'+str(page))
-	pageShow	= page
-	pageShowM	= page-1
-	pageShowP	= page+1
-	pageM = page-1
-	pageP = page+1
-
-	dir = MediaContainer(viewMode = "List", title2 = mainTitle+' | Page: '+str(pageShow))
-	if pageFormat == 'channels':
-		pageContent = HTML.ElementFromURL(url % (searchQuery, sortOrder, str(page)))
-	elif pageFormat == 'pornstars':
-		pageContent = HTML.ElementFromURL(url % (searchQuery, str(page)))
-	elif pageFormat == 'search':
-		pageContent = HTML.ElementFromURL(url % (sortOrder, searchQuery, str(page)))
-	else:
-		try:
-			pageContent = HTML.ElementFromURL(url % (sortOrder, str(page)))
-		except:
-			pageContent = HTML.ElementFromURL(url % (str(page)))
-	initialXpath = '//ul[@class="videoThumbs"]/li'
-	for videoItem in pageContent.xpath(initialXpath):
-		videoItemTitle = videoItem.xpath('div/a')[0].get('title').strip()
-		videoItemID	= videoItem.xpath('div/a')[0].get('href').replace('/', '').strip()
-		videoItemURL = REDTUBE_BASE+videoItem.xpath('div/a')[0].get('href').strip()
-		videoItemThumb = None
-		try: videoItemThumb = videoItem.xpath('div/a/img')[0].get('src').replace('m.jpg', 'b.jpg')
-		except: pass
-		duration = None
-		try: duration = videoItem.xpath('div[@class="time"]/div[@style="float:left;"]/span[@class="d"]/text()')[0].strip()
-		except: pass
-		videoItemDuration = GetDurationFromString(duration)
-		videoItemViews = None
-		try: videoItemViews = videoItem.xpath('div[@class="lastMovieRow"]/div[@style="float:left;"]/text()')[0].replace(' views', '').strip()
-		except: pass
-		videoItemRating = None
-		try: videoItemRating = round((float(videoItem.xpath('div[@class="time"]/div[@style="float:right;"]/text()')[0].strip())*2),2)
-		except: pass
-		#Log(videoItemTitle+'__'+videoItemID+'__'+videoItemURL+'__'+videoItemThumb+'__'+str(videoItemDuration)+'__'+videoItemViews)
-		dir.Append(Function(PopupDirectoryItem(VideoSubMenu, title=videoItemTitle, duration=videoItemDuration, subtitle=duration+' | Rating: '+str(videoItemRating)+ ' | Views: '+videoItemViews, rating=videoItemRating, thumb=Function(Thumb, url=videoItemThumb), infoLabel=Function(msToRuntime, ms=videoItemDuration)), id=videoItemID, title=videoItemTitle, url=videoItemURL, thumb=videoItemThumb))
-	if len(pageContent.xpath('//a[@id="navNext"]')) > 0:
-		dir.Append(Function(DirectoryItem(MovieList, L('+++Next Page ('+str(pageShowP)+')+++')), url=url, mainTitle=mainTitle, searchQuery=searchQuery, pageFormat=pageFormat, sortOrder=sortOrder, page=pageP))
-	return dir
-
-def VideoSubMenu(sender,id,title,url,thumb):
-	dir = MediaContainer()
-	dir.Append(Function(VideoItem(PlayVideo,L('Play Video')), url=url))
-	dir.Append(Function(DirectoryItem(AddVideoToFavorites, L('Add to Favorites'), ''), id=id, title=title, url=url, thumb=thumb))
-	return dir
-
-####################################################################################################
-def AddVideoToFavorites(sender,id,title,url,thumb):
-	favs = {}
-	if Data.Exists('favoritevideos'):
-		favs = Data.LoadObject('favoritevideos')
-		if id in favs:
-			return MessageContainer('Already a Favorite', 'This Video is already on your list of Favorites.')
-	favs[id] = [id, title, url, thumb]
-	Data.SaveObject('favoritevideos', favs)
-	return MessageContainer('Added to Favorites', 'This Video has been added to your Favorites.')
-
-def RemoveVideoFromFavorites(sender,id):
-	favs = Data.LoadObject('favoritevideos')
-	if id in favs:
-		del favs[id]
-		Data.SaveObject('favoritevideos', favs)
-		return MessageContainer('Removed from Favorites', 'This Video has been removed from your Favorites.')
-
-def FavoriteVideos(sender):
-	dir = MediaContainer(viewMode = "List", title2 = 'Favorites', noCache=True)
-	favs = Data.LoadObject('favoritevideos')
-	values = favs.values()
-	output = [(f[1], f[0], f[2], f[3]) for f in values]
-	output.sort()
-	for title, id, url, thumb in output:
-		dir.Append(Function(PopupDirectoryItem(FavoritesSubMenu, title=title, thumb=Function(Thumb, url=thumb)), id=id, title=title, url=url, thumb=thumb))
-	return dir
-
-def FavoritesSubMenu(sender,id,title,url,thumb):
-	dir = MediaContainer()
-	dir.Append(Function(VideoItem(PlayVideo,L('Play Video')), url=url))
-	dir.Append(Function(DirectoryItem(RemoveVideoFromFavorites, L('Remove from Favorites'), ''), id=id))
-	return dir
-####################################################################################################
-
-def Search(sender,url,query='',mainTitle='Search',pageFormat='search'):
-	dir = MediaContainer()
-	searchQueryCorrect = String.Quote(query)
-	dir = SortOrderSubMenu(sender=None, url=url, mainTitle=mainTitle+': '+query, searchQuery=searchQueryCorrect, pageFormat=pageFormat)
-	return dir
-
-####################################################################################################
-
-def PlayVideo(sender, url):
-	request = HTTP.Request(url)
-	content = request.content
-	#headers = request.headers
-	#Log(content)
-	#Log(headers)
-	#vidurl = re.compile('so.addVariable\("file","(.+?)"\)').findall(content, re.DOTALL)
-	#vidurl = re.compile('"<source src=\'(.+?)\' type=\'video/mp4\'>"').findall(content, re.DOTALL)
-	vidurl = re.compile('flv_h264_url=(.+?)%0A&http\.startparam').findall(content, re.DOTALL)
-	if len(vidurl) < 1:
-		vidurl = re.compile('"<source src=\'(.+?)\' type=\'video/mp4\'>"').findall(content, re.DOTALL)
-	#Log(vidurl)
-	#urlresult = urllib.unquote(vidurl[0])
-	#Log.Debug("urlresult:" + urlresult)
-	if len(vidurl) > 0:
-		#return Redirect(vidurl[0])
-		return Redirect(urllib.unquote(vidurl[0]))
-	else:
-		return None
+from PCbfCategoriesMenu import *
+from PCbfTagsMenu import *
+from PCbfPornstarsMenu import *
+from PCbfSearch import *
+#from PCbfRateing import *
+#from PCbf import *
