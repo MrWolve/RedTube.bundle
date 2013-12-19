@@ -8,7 +8,7 @@ def TagsMenu():
 		for tagItem in pageContent.xpath('//ul[contains(@class,"most-popular-tags")]/li'):
 			try: tagItemTitle = tagItem.xpath('a[contains(@class,"tag-link")]/text()')[0].strip()
 			except: tagItemTitle = None
-			try: tagItemTagName = tagItem.xpath('a[contains(@class,"tag-link")]')[0].get('href').replace('/tag','')
+			try: tagItemTagName = tagItem.xpath('a[contains(@class,"tag-link")]')[0].get('href').replace('/tag','').strip('/')
 			except: tagItemTagName = None
 			try:
 				tagItemThumb = tagItem.xpath('a/img')[0].get('src')
@@ -26,7 +26,7 @@ def TagsMenu():
 		for tagItem in pageContent.xpath('//ul[contains(@class,"list-tags")]/li'):
 			try: tagItemTitle = tagItem.xpath('a[contains(@class,"tag-link")]/text()')[0].strip()
 			except: tagItemTitle = None
-			try: tagItemTagName = tagItem.xpath('a[contains(@class,"tag-link")]')[0].get('href').replace('/tag','')
+			try: tagItemTagName = tagItem.xpath('a[contains(@class,"tag-link")]')[0].get('href').replace('/tag','').strip('/')
 			except: tagItemTagName = None
 			try: tagItemNrVids = tagItem.xpath('span[contains(@class,"number-videos")]/text()')[0].strip().replace(',','.')
 			except: tagItemNrVids = None
