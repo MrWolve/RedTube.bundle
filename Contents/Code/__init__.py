@@ -207,8 +207,12 @@ def MovieList(url, mainTitle=None, searchQuery=None, pageFormat=None, sortOrder=
 				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_PORNSTAR % (searchQuery, sortOrder, str(page)))))
 				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
 			else:
-				try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_SEARCH % (String.Quote(searchQuery, usePlus=True), sortOrder, str(page)))))
-				except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
+				if String.Quote(searchQuery, usePlus=True).isdigit():
+					try: getVideoById(videoID=int(String.Quote(searchQuery, usePlus=True)), ocML=ocML)
+					except: PCbfLogging('event',PCbfLoggingDH,str(videoID),PCbfLoggingDT+' (API)','Error','List Videos','getVideoById failed (Search)!',int(String.Quote(searchQuery, usePlus=True)))
+				else:
+					try: apiContent = JSON.ObjectFromURL(RT_API_BASE+(RT_API_searchVideos % (RT_API_SEARCH % (String.Quote(searchQuery, usePlus=True), sortOrder, str(page)))))
+					except: PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Page Not Found!',page)
 		if (apiContent!=None):
 			if 'videos' in apiContent:
 				for data in apiContent['videos']:
@@ -259,8 +263,9 @@ def MovieList(url, mainTitle=None, searchQuery=None, pageFormat=None, sortOrder=
 					PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','No Content! API changed?',page)
 					return ObjectContainer(header='Sorry, an Error occurred!', message='Not sure why, but there occured an error retrieving data for your query.', no_cache=True)
 		else:
-			PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Problem with Content! API changed?',page)
-			return ObjectContainer(header='Sorry, an Error occurred!', message='Not sure why, but there occured an error retrieving data for your query.', no_cache=True)
+			if (len(ocML)<1):
+				PCbfLogging('event',PCbfLoggingDH,PCbfLoggingDP,PCbfLoggingDT+' (API)','Error','List Videos','Problem with Content! API changed?',page)
+				return ObjectContainer(header='Sorry, an Error occurred!', message='Not sure why, but there occured an error retrieving data for your query.', no_cache=True)
 	if (len(ocML)>0): return ocML
 	else:
 		PCbfLogging('event',PCbfLoggingDH,str(PCbfLoggingDP),str(PCbfLoggingDT),'Error','List Videos','FATAL ERROR!',page)
