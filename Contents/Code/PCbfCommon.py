@@ -5,21 +5,11 @@ def PCbfLogging(PCbfLoggingT='pageview',PCbfLoggingDH='plexchannels.com',PCbfLog
 		#PCbfLoggingURLEndPoint	=	'http://www.google-analytics.com/collect?'
 		PCbfLoggingURLEndPoint	=	'https://ssl.google-analytics.com/collect?'
 		PCbfLoggingCID =	str(String.UUID())	#cid
-		if Data.Exists('PCbfLoggingData'):
-			try:
-				Daten = Data.LoadObject('PCbfLoggingData')
-				Inhalt = Daten.values()
-				PCbfLoggingCID = str(Inhalt[0])
-			except:
-				Daten = Data.LoadObject('PCbfLoggingData')
-				Inhalt = Daten.values()
-				PCbfLoggingCID = str(Inhalt[0])
+		if 'PCbfLoggingData' in Dict:
+			PCbfLoggingCID = Dict['PCbfLoggingData']
 		else:
-			try:
-				PCbfLoggingCIDA = {}
-				PCbfLoggingCIDA[0] = PCbfLoggingCID
-				Data.SaveObject('PCbfLoggingData', PCbfLoggingCIDA)
-			except: pass
+			Dict['PCbfLoggingData'] = PCbfLoggingCID
+			Dict.Save()
 		PCbfLoggingV				=	1	#v
 		PCbfLoggingAIP			=	1	#aip
 		PCbfLoggingUL				= ''	#Locale.CurrentLocale oder Locale.Geolocation - scheint beides nicht zu funktionieren!	#ul
@@ -46,8 +36,6 @@ def PCbfLogging(PCbfLoggingT='pageview',PCbfLoggingDH='plexchannels.com',PCbfLog
 		except:
 			Log(HTTP.Request(url, headers=PCbfLoggingHeaders, cacheTime=10, timeout=5, immediate=True).content)
 	else:
-		try:
-			if Data.Exists('PCbfLoggingData'):
-				Data.Remove('PCbfLoggingData')
-		except: pass
+		Dict['PCbfLoggingData'] = ''
+		Dict.Save()
 		Log('Anonymous Usage Statistics DEACTIVATED!')
