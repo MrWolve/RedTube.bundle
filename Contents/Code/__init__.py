@@ -89,7 +89,12 @@ def MainMenu():
 	oc.add(InputDirectoryObject(key=Callback(Search), title="Search", summary="Search RedTube for videos", prompt="Search for", thumb=R(SEARCH_ICON)))
 	oc.add(PrefsObject(title='Preferences',summary='Change RedTube Channel Settings.'))
 	PCbfNews(oc=oc, limit=1)
-	try: PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
+	try:
+		AffiliateReferer = {'Referer': 'http://plexchannels.com/channels/'+TITLE.lower()}
+		try:
+			FakeReq = HTTP.Request(RT_HTML_BASE, headers=AffiliateReferer, cacheTime=3600, immediate=True).content
+			PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
+		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','MakeAffiliate','MakeAffiliate failed!',0)
 	except: pass
 	try:
 		PreCacheDone = doPreCache()

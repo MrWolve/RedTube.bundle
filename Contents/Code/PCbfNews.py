@@ -1,7 +1,7 @@
 @route(PREFIX+'/pcbfnews', limit=int)
 def PCbfNews(oc=None, limit=10):
 	try: newsContent = JSON.ObjectFromURL('http://plexchannels.com/c/%s-news/?json=1&count=%s' % ("".join(TITLE.lower().split()), limit))
-	except: PCbfLogging('event','plexchannels.com',('/c/%s-news/' % (TITLE.lower())),TITLE+' - Plex Channel by flow - News','Error','News','Error reading News!',limit)
+	except: PCbfLogging('event','plexchannels.com',('/c/%s-news/' % ("".join(TITLE.lower().split()))),TITLE+' - Plex Channel by flow - News','Error','News','Error reading News!',limit)
 	if (oc == None):
 		oc = ObjectContainer(title2='Plex Channel by flow - News')
 		try:
