@@ -90,11 +90,12 @@ def MainMenu():
 	oc.add(PrefsObject(title='Preferences',summary='Change RedTube Channel Settings.'))
 	PCbfNews(oc=oc, limit=1)
 	try:
-		AffiliateReferer = {'Referer': 'http://plexchannels.com/channels/'+TITLE.lower()}
+		PCbfReferer = {'Referer': 'http://plexchannels.com/channels/'+TITLE.lower()}
 		try:
-			FakeReq = HTTP.Request(RT_HTML_BASE, headers=AffiliateReferer, cacheTime=3600, immediate=True).content
+			FakeReq = HTTP.Request(RT_HTML_BASE, headers=PCbfReferer, cacheTime=3600, immediate=True).content
 			PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
-		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','MakeAffiliate','MakeAffiliate failed!',0)
+			PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Information','Platform.OS and Client.Platform',str(Platform.OS)+' and '+str(Client.Platform),0)
+		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','PCbfReferer','PCbfReferer failed!',0)
 	except: pass
 	try:
 		PreCacheDone = doPreCache()
