@@ -94,7 +94,7 @@ def MainMenu():
 		try:
 			FakeReq = HTTP.Request(RT_HTML_BASE, headers=PCbfReferer, cacheTime=3600, immediate=True).content
 			PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
-			PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Information','Platform.OS and Client.Platform',str(Platform.OS)+' and '+str(Client.Platform),0)
+			PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Information','Platform.OS and Client.Platform and Client.Product',str(Platform.OS)+' and '+str(Client.Platform)+' and '+str(Client.Product),0)
 		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','PCbfReferer','PCbfReferer failed!',0)
 	except: pass
 	try:
