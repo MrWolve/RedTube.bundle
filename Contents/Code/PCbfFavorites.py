@@ -4,11 +4,11 @@ def AddVideoToFavorites(id, name=''):
 		favs = {}
 		if Data.Exists('PCbfFavorites'):
 			favs = Data.LoadObject('PCbfFavorites')
-			if str(id) not in favs:
-				favs[id] = [id]
-				Data.SaveObject('PCbfFavorites', favs)
-			PCbfLogging('event',PCbfLoggingDH,'/'+str(id),TITLE+' - '+str(name),'Favorites','Add Favorite','Video added to Favorites.',id)
-			return ObjectContainer(header='Added to Favorites', message='This Video has been added to your Favorites.', no_cache=True)
+		if str(id) not in favs:
+			favs[id] = [id]
+			Data.SaveObject('PCbfFavorites', favs)
+		PCbfLogging('event',PCbfLoggingDH,'/'+str(id),TITLE+' - '+str(name),'Favorites','Add Favorite','Video added to Favorites.',id)
+		return ObjectContainer(header='Added to Favorites', message='This Video has been added to your Favorites.', no_cache=True)
 	except: PCbfLogging('event',PCbfLoggingDH,'/'+str(id),TITLE+' - '+str(name),'Error','Add Favorite','Unable to add video to Favorites.',id)
 
 @route(PREFIX+'/removevideofromfavorites', id=int)

@@ -45,7 +45,7 @@ def getVideoById(videoID, ocML=None):
 				PCbfLogging('event',PCbfLoggingDH,'/'+str(videoID),TITLE+' - Video (API)','Error','Loading Video','Problem with Content! API changed?',videoID)
 				Log(str(videoID)+'_'+str(videoURL)+'_'+str(len(videoTAGS))+'_'+str(videoDURATION)+'_'+str(videoRATING)+'_'+str(videoTITLE)+'_'+str(videoYEAR)+'_'+str(videoOAAT)+'_'+str(videoSUMMARY)+'_'+str(videoTHUMB))
 			if (ocML == None):
-				oc = ObjectContainer(title2=videoTITLE)
+				oc = ObjectContainer(title2=videoTITLE, no_cache=True)
 				oc.add(VideoClipObject(
 					url = videoURL,
 					genres = ['XXX','Adult','18+'],
