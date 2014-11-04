@@ -11,7 +11,7 @@ def CategoriesMenu():
 			try: categoryItemCatName = categoryItem.xpath('div/a/img')[0].get('id')
 			except: categoryItemCatName = None
 			try:
-				categoryItemThumb = categoryItem.xpath('div/a/img')[0].get('src')
+				categoryItemThumb = categoryItem.xpath('div/a/img')[0].get('data-src')
 				HTTP.PreCache(categoryItemThumb, cacheTime=CACHE_1WEEK)
 			except: categoryItemThumb = None
 			try: categoryItemNrVids = categoryItem.xpath('p/text()')[0].strip().replace(',','.')
