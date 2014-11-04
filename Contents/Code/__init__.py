@@ -67,9 +67,11 @@ def Start():
 	VideoClipObject.art = R(ART)
 	try:
 		SetHeadersDone = doSetHeaders()
+		PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
 		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Notice','SetHeaders','doSetHeaders done.',SetHeadersDone)
 		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','SetHeaders','doSetHeaders failed!',SetHeadersDone)
 	except:
+		PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
 		try: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','SetHeaders','doSetHeaders completly failed!',0)
 		except: pass
 
@@ -93,7 +95,6 @@ def MainMenu():
 		PCbfReferer = {'Referer': 'http://plexchannels.com/channels/'+TITLE.lower()}
 		try:
 			FakeReq = HTTP.Request(RT_HTML_BASE, headers=PCbfReferer, cacheTime=3600, immediate=True).content
-			PCbfLogging('pageview',PCbfLoggingDH,'/',TITLE)
 			PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Information','Platform.OS and Client.Platform and Client.Product',str(Platform.OS)+' and '+str(Client.Platform)+' and '+str(Client.Product),0)
 		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','PCbfReferer','PCbfReferer failed!',0)
 	except: pass
