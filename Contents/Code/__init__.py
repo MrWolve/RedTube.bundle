@@ -44,7 +44,7 @@ RT_API_TAGS						=	RT_API_BASE+'Tags.getTagList&output=json'
 RT_API_PORNSTARS			=	RT_API_BASE+'Stars.getStarDetailedList&output=json'
 RT_API_LIMIT					=	int(26)
 
-RT_HTML_VIDEO_xpath		=	'//div[@class="video"]/a/@href'
+RT_HTML_VIDEO_xpath		=	'//a[contains(@class,"video")]/@href'
 RT_HTML_NEXTa_xpath		=	'//a[@id="navNext"]'
 RT_HTML_NEXTb_xpath		=	'//link[@rel="next"]'
 #RT_HTML_RATE					=	RT_HTML_BASE+'/rate?object_type=1&object_id=%s&rate=%s&ufAC=%s'
