@@ -33,7 +33,7 @@ def ListFavorites():
 			pageContent = ''
 			for id in output:
 				#pageContent needs to have the same format as defined in RT_HTML_VIDEO_xpath!!!
-				pageContent += '<div class="video"><a href="/'+str(id)+'">'
+				pageContent += '<a href="/'+str(id)+'" class="video">'
 			if pageContent == '':
 				PCbfLogging('event',PCbfLoggingDH,'/',TITLE+' - Favorites','Error','List Favorites','PCbfFavorites is empty!')
 				return None
