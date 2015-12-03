@@ -7,7 +7,7 @@ PCbfLoggingDH		=	String.Quote('redtube.com')
 PCbfLoggingTID	=	'UA-40179636-2'	#tid
 
 from PCbfCommon import *
-import random
+import random, re, time
 
 ART					=	'artwork-'+str(random.randint(1,4))+'.jpg'
 ICON				=	'icon-default.png'
@@ -92,9 +92,12 @@ def MainMenu():
 	oc.add(PrefsObject(title='Preferences',summary='Change RedTube Channel Settings.'))
 	PCbfNews(oc=oc, limit=1)
 	try:
-		PCbfReferer = {'Referer': 'http://plexchannels.com/channels/'+TITLE.lower()}
+		PCbfReferer = {'Referer': 'http://plexchannels.com/channels/'+TITLE.lower()+'/'}
 		try:
-			FakeReq = HTTP.Request(RT_HTML_BASE, headers=PCbfReferer, cacheTime=3600, immediate=True).content
+			FakeReq1 = HTTP.Request(RT_HTML_BASE, headers=PCbfReferer, cacheTime=3600, immediate=True).content
+			FakeReq2 = HTTP.Request('http://ht.redtube.com/js/ht.js?site_id=2', headers=PCbfReferer, cacheTime=3600, immediate=True).content
+			FakeReq3 = HTTP.Request('http://ht.redtube.com/htjs.php?i=2&r=http%3A%2F%2Fplexchannels.com%2Fchannels%2Fredtube%2F&cache='+str(int(time.time())), headers=PCbfReferer, cacheTime=3600, immediate=True).content
+			FakeReq4 = HTTP.Request('http://'+re.search('(ht.redtube.com.*1)', FakeReq3).group(), headers=PCbfReferer, cacheTime=3600, immediate=True).content
 			PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Information','Platform.OS and Client.Platform and Client.Product',str(Platform.OS)+' and '+str(Client.Platform)+' and '+str(Client.Product),0)
 		except: PCbfLogging('event',PCbfLoggingDH,'/',TITLE,'Error','PCbfReferer','PCbfReferer failed!',0)
 	except: pass
