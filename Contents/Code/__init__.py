@@ -1,6 +1,6 @@
 TITLE		=	'RedTube'
 PREFIX	=	'/video/redtube'
-PCVer		=	str('1.0.20150610')
+PCVer		=	str('1.0.20160414')
 
 #https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
 PCbfLoggingDH		=	String.Quote('redtube.com')
