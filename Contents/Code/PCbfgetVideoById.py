@@ -38,7 +38,7 @@ def getVideoById(videoID, ocML=None):
 			try: videoSUMMARY = 'Duration: '+data['duration']+' | Tags: '+', '.join(videoTAGS)
 			except: videoSUMMARY = None
 			try:
-				videoTHUMB = data['default_thumb'].replace('m.jpg', 'b.jpg')
+				videoTHUMB = 'http:'+data['default_thumb'].replace('m.jpg', 'b.jpg')
 				HTTP.PreCache(videoTHUMB, cacheTime=CACHE_1WEEK)
 			except: videoTHUMB = None
 			if ((data == None) or (videoURL == None) or (len(videoTAGS)<1) or (videoDURATION == None) or (videoRATING == None) or (videoTITLE == None) or (videoYEAR == None) or (videoOAAT == None) or (videoSUMMARY == None) or (videoTHUMB == None)):
