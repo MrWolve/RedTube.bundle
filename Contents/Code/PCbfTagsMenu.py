@@ -11,7 +11,7 @@ def TagsMenu():
 			try: tagItemTagName = tagItem.xpath('a[contains(@class,"tag-link")]')[0].get('href').replace('/tag','').strip('/')
 			except: tagItemTagName = None
 			try:
-				tagItemThumb = tagItem.xpath('a/img')[0].get('src')
+				tagItemThumb = 'http:'+tagItem.xpath('a/img')[0].get('src')
 				HTTP.PreCache(tagItemThumb, cacheTime=CACHE_1WEEK)
 			except: tagItemThumb = None
 			try: tagItemNrVids = tagItem.xpath('span[contains(@class,"number-videos")]/text()')[0].strip().replace(',','.')
