@@ -1,6 +1,6 @@
 TITLE		=	'RedTube'
 PREFIX	=	'/video/redtube'
-PCVer		=	str('1.0.20160414')
+PCVer		=	str('1.0.20161019')
 
 #https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
 PCbfLoggingDH		=	String.Quote('redtube.com')
@@ -243,7 +243,7 @@ def MovieList(url, mainTitle=None, searchQuery=None, pageFormat=None, sortOrder=
 					try: videoSUMMARY = 'Duration: '+data['duration']+' | Tags: '+', '.join(videoTAGS)
 					except: videoSUMMARY = None
 					try:
-						videoTHUMB = data['default_thumb'].replace('m.jpg', 'b.jpg')
+						videoTHUMB = 'http:'+data['default_thumb'].replace('m.jpg', 'b.jpg')
 						HTTP.PreCache(videoTHUMB, cacheTime=CACHE_1WEEK)
 					except: videoTHUMB = None
 					if ((data == None) or (videoID == None) or (len(videoTAGS)<1) or (videoDURATION == None) or (videoTITLE == None) or (videoSUMMARY == None) or (videoTHUMB == None)):
