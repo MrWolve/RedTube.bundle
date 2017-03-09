@@ -243,7 +243,7 @@ def MovieList(url, mainTitle=None, searchQuery=None, pageFormat=None, sortOrder=
 					try: videoSUMMARY = 'Duration: '+data['duration']+' | Tags: '+', '.join(videoTAGS)
 					except: videoSUMMARY = None
 					try:
-						videoTHUMB = 'http:'+data['default_thumb'].replace('m.jpg', 'b.jpg')
+						videoTHUMB = re.sub('^(https?)://', 'https://', data['default_thumb'].replace('m.jpg', 'b.jpg'))
 						HTTP.PreCache(videoTHUMB, cacheTime=CACHE_1WEEK)
 					except: videoTHUMB = None
 					if ((data == None) or (videoID == None) or (len(videoTAGS)<1) or (videoDURATION == None) or (videoTITLE == None) or (videoSUMMARY == None) or (videoTHUMB == None)):
